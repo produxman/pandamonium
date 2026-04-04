@@ -171,6 +171,21 @@ function stopAudioKeepalive() {
   document.addEventListener(evt, () => getAlertBlobUrl(), { once: true })
 );
 
+/* ─── Media Session (Dynamic Island / Lock Screen) ─── */
+function updateMediaSession(label, remaining) {
+  if (!navigator.mediaSession) return;
+  const mm = Math.floor(remaining / 60);
+  const ss = String(remaining % 60).padStart(2, "0");
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: mm + ":" + ss,
+    artist: label,
+  });
+}
+function clearMediaSession() {
+  if (!navigator.mediaSession) return;
+  navigator.mediaSession.metadata = null;
+}
+
 function playAlert() {
   try {
     // Play via <audio> element — works more reliably in background on mobile
@@ -187,13 +202,13 @@ function RestTimer({ onDone }) {
   const [secs, setSecs] = useState(REST_DEFAULT);
   const ref = useRef();
 
-  useEffect(() => { startAudioKeepalive(); return () => stopAudioKeepalive(); }, []);
+  useEffect(() => { startAudioKeepalive(); return () => { stopAudioKeepalive(); clearMediaSession(); }; }, []);
 
   useEffect(() => {
     const tick = () => {
       const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
-      if (remaining <= 0) { clearInterval(ref.current); setSecs(0); onDone(); }
-      else setSecs(remaining);
+      if (remaining <= 0) { clearInterval(ref.current); setSecs(0); clearMediaSession(); onDone(); }
+      else { setSecs(remaining); updateMediaSession("Rest", remaining); }
     };
     ref.current = setInterval(tick, 250);
     document.addEventListener("visibilitychange", tick);
@@ -287,19 +302,20 @@ function TimerPanel({ setIndex, totalSets, durationSecs, onComplete, onClose }) 
   const remainingOnPauseRef = useRef(durationSecs);
   const intervalRef = useRef();
 
-  useEffect(() => { startAudioKeepalive(); return () => stopAudioKeepalive(); }, []);
+  useEffect(() => { startAudioKeepalive(); return () => { stopAudioKeepalive(); clearMediaSession(); }; }, []);
 
   useEffect(() => {
     clearInterval(intervalRef.current);
     if (paused) {
       remainingOnPauseRef.current = secs;
+      updateMediaSession("Set " + setIndex + "/" + totalSets + " (Paused)", secs);
       return;
     }
     endTimeRef.current = Date.now() + remainingOnPauseRef.current * 1000;
     const tick = () => {
       const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
-      if (remaining <= 0) { clearInterval(intervalRef.current); setSecs(0); playAlert(); onComplete(); }
-      else setSecs(remaining);
+      if (remaining <= 0) { clearInterval(intervalRef.current); setSecs(0); clearMediaSession(); playAlert(); onComplete(); }
+      else { setSecs(remaining); updateMediaSession("Set " + setIndex + "/" + totalSets, remaining); }
     };
     intervalRef.current = setInterval(tick, 250);
     document.addEventListener("visibilitychange", tick);
