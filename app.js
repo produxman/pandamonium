@@ -156,13 +156,18 @@ function startAudioKeepalive() {
   _silentAudio = new Audio(url);
   _silentAudio.loop = true;
   _silentAudio.volume = 0.01;
-  _silentAudio.play().catch(() => {});
+  const p = _silentAudio.play();
+  if (p) p.then(() => {
+    // Set initial media session state once audio is active
+    if (navigator.mediaSession) navigator.mediaSession.playbackState = "playing";
+  }).catch(() => {});
 }
 function stopAudioKeepalive() {
   _silentRefCount = Math.max(0, _silentRefCount - 1);
   if (_silentRefCount === 0 && _silentAudio) {
     _silentAudio.pause();
     _silentAudio = null;
+    if (navigator.mediaSession) navigator.mediaSession.playbackState = "none";
   }
 }
 
@@ -172,18 +177,22 @@ function stopAudioKeepalive() {
 );
 
 /* ─── Media Session (Dynamic Island / Lock Screen) ─── */
+const _artworkUrl = new URL("img/icon.png", location.href).href;
 function updateMediaSession(label, remaining) {
   if (!navigator.mediaSession) return;
   const mm = Math.floor(remaining / 60);
   const ss = String(remaining % 60).padStart(2, "0");
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: mm + ":" + ss,
-    artist: label,
+    title: mm + ":" + ss + " — " + label,
+    artist: "Workout Timer",
+    artwork: [{ src: _artworkUrl, sizes: "512x512", type: "image/png" }],
   });
+  navigator.mediaSession.playbackState = "playing";
 }
 function clearMediaSession() {
   if (!navigator.mediaSession) return;
   navigator.mediaSession.metadata = null;
+  navigator.mediaSession.playbackState = "none";
 }
 
 function playAlert() {
