@@ -92,7 +92,7 @@ function parseWorkout(text) {
       currentDay = { title: "Workout", exercises: [] };
       days.push(currentDay);
     }
-    const exMatch = line.match(/^[-*\u2022]?\s*(.+?):\s*(\d+)\s*[xX\u00D7]\s*(\d+(?:[-.:}\d+)?(?:[a-zA-Z]+)?)\s*(?:\(([\d.]+)\s*kg\))?\s*$/);
+    const exMatch = line.match(/^[-*\u2022]?\s*(.+?):\s*(\d+)\s*[xX\u00D7]\s*(\d+(?:[-.:}\d+)?(?:[a-zA-Z]+)?)\s*(?:\(([\d.]+)\s*kg(?:\s+total)?\))?\s*$/);
     if (exMatch) {
       const sets = parseInt(exMatch[2]);
       const suggestedWeight = exMatch[4] ? parseFloat(exMatch[4]) : null;
