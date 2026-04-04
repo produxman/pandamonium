@@ -178,25 +178,36 @@ function stopAudioKeepalive() {
 
 /* ─── Media Session (Dynamic Island / Lock Screen) ─── */
 const _artworkUrl = new URL("img/icon.png", location.href).href;
-let _lastMediaTitle = "";
-function updateMediaSession(label, remaining) {
+let _lastMediaSec = -1;
+let _mediaLabel = "";
+function updateMediaSession(label, remaining, totalDuration) {
   if (!navigator.mediaSession) return;
-  const mm = Math.floor(remaining / 60);
-  const ss = String(remaining % 60).padStart(2, "0");
-  const title = mm + ":" + ss;
-  // Only update metadata when the displayed second changes (avoids excessive updates that iOS ignores)
-  if (title === _lastMediaTitle) return;
-  _lastMediaTitle = title;
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: title,
-    artist: label,
-    artwork: [{ src: _artworkUrl, sizes: "512x512", type: "image/png" }],
-  });
-  navigator.mediaSession.playbackState = "playing";
+  // Set metadata only once per label change
+  if (label !== _mediaLabel) {
+    _mediaLabel = label;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: label,
+      artist: "Workout Timer",
+      artwork: [{ src: _artworkUrl, sizes: "512x512", type: "image/png" }],
+    });
+    navigator.mediaSession.playbackState = "playing";
+  }
+  // Update position every second so iOS renders native progress/time
+  if (remaining !== _lastMediaSec) {
+    _lastMediaSec = remaining;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: totalDuration,
+        position: totalDuration - remaining,
+        playbackRate: 1,
+      });
+    } catch (e) {}
+  }
 }
 function clearMediaSession() {
   if (!navigator.mediaSession) return;
-  _lastMediaTitle = "";
+  _lastMediaSec = -1;
+  _mediaLabel = "";
   navigator.mediaSession.metadata = null;
   navigator.mediaSession.playbackState = "none";
 }
@@ -223,7 +234,7 @@ function RestTimer({ onDone }) {
     const tick = () => {
       const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
       if (remaining <= 0) { clearInterval(ref.current); setSecs(0); clearMediaSession(); onDone(); }
-      else { setSecs(remaining); updateMediaSession("Rest", remaining); }
+      else { setSecs(remaining); updateMediaSession("Rest", remaining, REST_DEFAULT); }
     };
     ref.current = setInterval(tick, 250);
     document.addEventListener("visibilitychange", tick);
@@ -323,14 +334,14 @@ function TimerPanel({ setIndex, totalSets, durationSecs, onComplete, onClose }) 
     clearInterval(intervalRef.current);
     if (paused) {
       remainingOnPauseRef.current = secs;
-      updateMediaSession("Set " + setIndex + "/" + totalSets + " (Paused)", secs);
+      updateMediaSession("Set " + setIndex + "/" + totalSets + " (Paused)", secs, durationSecs);
       return;
     }
     endTimeRef.current = Date.now() + remainingOnPauseRef.current * 1000;
     const tick = () => {
       const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
       if (remaining <= 0) { clearInterval(intervalRef.current); setSecs(0); clearMediaSession(); playAlert(); onComplete(); }
-      else { setSecs(remaining); updateMediaSession("Set " + setIndex + "/" + totalSets, remaining); }
+      else { setSecs(remaining); updateMediaSession("Set " + setIndex + "/" + totalSets, remaining, durationSecs); }
     };
     intervalRef.current = setInterval(tick, 250);
     document.addEventListener("visibilitychange", tick);
