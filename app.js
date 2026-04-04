@@ -178,19 +178,25 @@ function stopAudioKeepalive() {
 
 /* ─── Media Session (Dynamic Island / Lock Screen) ─── */
 const _artworkUrl = new URL("img/icon.png", location.href).href;
+let _lastMediaTitle = "";
 function updateMediaSession(label, remaining) {
   if (!navigator.mediaSession) return;
   const mm = Math.floor(remaining / 60);
   const ss = String(remaining % 60).padStart(2, "0");
+  const title = mm + ":" + ss;
+  // Only update metadata when the displayed second changes (avoids excessive updates that iOS ignores)
+  if (title === _lastMediaTitle) return;
+  _lastMediaTitle = title;
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: mm + ":" + ss + " — " + label,
-    artist: "Workout Timer",
+    title: title,
+    artist: label,
     artwork: [{ src: _artworkUrl, sizes: "512x512", type: "image/png" }],
   });
   navigator.mediaSession.playbackState = "playing";
 }
 function clearMediaSession() {
   if (!navigator.mediaSession) return;
+  _lastMediaTitle = "";
   navigator.mediaSession.metadata = null;
   navigator.mediaSession.playbackState = "none";
 }
