@@ -110,29 +110,74 @@ function parseWorkout(text) {
 }
 
 /* ─── Alert Sound ─── */
+// Generate a WAV beep blob URL for reliable background playback
+let _alertBlobUrl = null;
+function getAlertBlobUrl() {
+  if (_alertBlobUrl) return _alertBlobUrl;
+  const sampleRate = 44100, duration = 0.5;
+  const numSamples = Math.floor(sampleRate * duration);
+  const buf = new ArrayBuffer(44 + numSamples * 2);
+  const v = new DataView(buf);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0,"RIFF"); v.setUint32(4, 36 + numSamples * 2, true); ws(8,"WAVE");
+  ws(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sampleRate,true); v.setUint32(28,sampleRate*2,true);
+  v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,"data"); v.setUint32(40, numSamples * 2, true);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    let s = 0;
+    // First beep: 880Hz, 0–0.3s with decay
+    if (t < 0.3) s += 0.3 * Math.exp(-t * 8) * Math.sin(2 * Math.PI * 880 * t);
+    // Second beep: 1100Hz, 0.15–0.45s with decay
+    if (t >= 0.15 && t < 0.45) s += 0.3 * Math.exp(-(t - 0.15) * 8) * Math.sin(2 * Math.PI * 1100 * (t - 0.15));
+    v.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.floor(s * 32767))), true);
+  }
+  _alertBlobUrl = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+  return _alertBlobUrl;
+}
+
+// Silent audio keepalive — prevents mobile OS from suspending audio in background
+let _silentAudio = null, _silentRefCount = 0;
+function startAudioKeepalive() {
+  _silentRefCount++;
+  if (_silentAudio) return;
+  const sr = 8000, len = sr; // 1 second of silence
+  const b = new ArrayBuffer(44 + len * 2);
+  const d = new DataView(b);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) d.setUint8(o + i, s.charCodeAt(i)); };
+  w(0,"RIFF"); d.setUint32(4,36+len*2,true); w(8,"WAVE");
+  w(12,"fmt "); d.setUint32(16,16,true); d.setUint16(20,1,true); d.setUint16(22,1,true);
+  d.setUint32(24,sr,true); d.setUint32(28,sr*2,true);
+  d.setUint16(32,2,true); d.setUint16(34,16,true);
+  w(36,"data"); d.setUint32(40,len*2,true);
+  // samples are all 0 (silence)
+  const url = URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+  _silentAudio = new Audio(url);
+  _silentAudio.loop = true;
+  _silentAudio.volume = 0.01;
+  _silentAudio.play().catch(() => {});
+}
+function stopAudioKeepalive() {
+  _silentRefCount = Math.max(0, _silentRefCount - 1);
+  if (_silentRefCount === 0 && _silentAudio) {
+    _silentAudio.pause();
+    _silentAudio = null;
+  }
+}
+
+// Unlock audio on first interaction
+["touchstart", "touchend", "click"].forEach(evt =>
+  document.addEventListener(evt, () => getAlertBlobUrl(), { once: true })
+);
+
 function playAlert() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.3);
-    // second beep
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.frequency.value = 1100;
-    gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
-    osc2.start(ctx.currentTime + 0.15);
-    osc2.stop(ctx.currentTime + 0.45);
-    setTimeout(() => ctx.close(), 600);
+    // Play via <audio> element — works more reliably in background on mobile
+    const audio = new Audio(getAlertBlobUrl());
+    audio.play().catch(() => {});
+    // Also vibrate on supported devices
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch (e) {}
 }
 
@@ -141,6 +186,8 @@ function RestTimer({ onDone }) {
   const endTimeRef = useRef(Date.now() + REST_DEFAULT * 1000);
   const [secs, setSecs] = useState(REST_DEFAULT);
   const ref = useRef();
+
+  useEffect(() => { startAudioKeepalive(); return () => stopAudioKeepalive(); }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -239,6 +286,8 @@ function TimerPanel({ setIndex, totalSets, durationSecs, onComplete, onClose }) 
   const endTimeRef = useRef(Date.now() + durationSecs * 1000);
   const remainingOnPauseRef = useRef(durationSecs);
   const intervalRef = useRef();
+
+  useEffect(() => { startAudioKeepalive(); return () => stopAudioKeepalive(); }, []);
 
   useEffect(() => {
     clearInterval(intervalRef.current);
