@@ -904,38 +904,69 @@ input, textarea, select { font-size: 16px !important; }
 /*  All dashboard rules are scoped under .rpg so the always-dark palette
  *  never leaks into the existing light/auto-dark workout screens.
  *
- *  Colour rule: --rpg-accent (deep violet) owns every piece of chrome,
+ *  Colour rule: --theme (deep violet) owns every piece of chrome,
  *  including the ambient glow behind the avatar. Green/amber/red appear
  *  ONLY on the score rings, their status labels, the overall badge and
  *  the light disc the character stands on. BODY is never graded. */
 
 .rpg {
-  --rpg-bg: #070912;
-  --rpg-surface: #141829;
-  --rpg-surface-2: #1b2039;
-  --rpg-text: #f0f2fa;
-  --rpg-text-dim: #868ead;
-  --rpg-accent: #6d5cf0;
-  --rpg-accent-bright: #9a8dff;
-  --rpg-accent-soft: rgba(109, 92, 240, 0.16);
-  --rpg-green: #35d07f;
-  --rpg-amber: #f5b544;
-  --rpg-red: #f26a6a;
-  --rpg-ring-track: rgba(255, 255, 255, 0.07);
-  --rpg-border: rgba(124, 108, 245, 0.16);
-  --rpg-edge: rgba(255, 255, 255, 0.11);
-  --rpg-band: var(--rpg-green);
+  /* Section palettes. Fixed, so a ring can always draw its own hue
+     no matter which section is selected. */
+  --vitality: #2DD4BF;
+  --vitality-bright: #5EEAD4;
+  --vitality-deep: #14A89A;
+  --power: #F43F6E;
+  --power-bright: #FB7196;
+  --power-deep: #BE2950;
+  --recovery: #7C6CF0;
+  --recovery-bright: #A594FF;
+  --recovery-deep: #5B4FD6;
+
+  /* The active theme. Swapped by [data-theme] below; Vitality is the
+     default when no ring is selected. */
+  --theme: var(--vitality);
+  --theme-bright: var(--vitality-bright);
+  --theme-deep: var(--vitality-deep);
+  --theme-soft: rgba(45, 212, 191, 0.16);
+  --theme-glow: rgba(45, 212, 191, 0.65);
+
+  /* Constant in every section. */
+  --bg: #0B0E1A;
+  --bg-lift: #161C33;
+  --surface: #151A2E;
+  --surface-lift: #1E2440;
+  --surface-veil: rgba(11, 14, 26, 0.84);
+  --track: #252B45;
+  --accent: #F0A830;
+  --neutral: #3A3F5C;
+  --text: #F2F4FA;
+  --text-muted: #9BA2BC;
+  --border: rgba(255, 255, 255, 0.07);
+  --edge: rgba(255, 255, 255, 0.11);
+  --core: rgba(255, 255, 255, 0.78);
+  --tick: rgba(255, 255, 255, 0.8);
+  --cast: #000000;
+  --shade: var(--shade);
+  --shade-deep: var(--shade-deep);
 
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  color: var(--rpg-text);
+  color: var(--text);
   background:
-    radial-gradient(85% 42% at 50% 24%, #1d2547 0%, rgba(10, 13, 28, 0) 72%),
-    radial-gradient(120% 80% at 50% 100%, #0d1022 0%, rgba(7, 9, 18, 0) 60%),
-    var(--rpg-bg);
+    radial-gradient(85% 42% at 50% 24%, var(--bg-lift) 0%, transparent 72%),
+    radial-gradient(120% 80% at 50% 100%, var(--surface) 0%, transparent 60%),
+    var(--bg);
   background-attachment: fixed;
   overflow-x: hidden;
+  /*  body adds both safe-area insets as padding, and the scroll
+   *  container below adds them again. These negative margins cancel
+   *  body's copy so each inset is counted exactly once, and they let the
+   *  dashboard background paint behind the Dynamic Island and the home
+   *  indicator rather than leaving body's darker strip showing at either
+   *  edge. Scoped to .rpg, so the workout screens are unaffected. */
+  margin-top: calc(var(--safe-top) * -1);
+  margin-bottom: calc(var(--safe-bottom) * -1);
 }
 
 .rpg__scroll {
@@ -944,77 +975,44 @@ input, textarea, select { font-size: 16px !important; }
   gap: 12px;
   max-width: 480px;
   margin: 0 auto;
-  padding: 10px calc(14px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(14px + var(--safe-left));
+  /* Top: the inset itself, plus breathing room so the first card is
+     not flush against the Dynamic Island. */
+  padding: calc(var(--safe-top) + 0.75rem) calc(14px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(14px + var(--safe-left));
 }
 
 /* Band colours — set once, inherited by ring stroke, status text and disc. */
-.rpg-ring--optimal, .rpg-hero--optimal { --rpg-band: var(--rpg-green); }
-.rpg-ring--good, .rpg-hero--good { --rpg-band: var(--rpg-amber); }
-.rpg-ring--attention, .rpg-hero--attention { --rpg-band: var(--rpg-red); }
+/* Rings are a fixed legend: each always draws its own section hue, at
+   every score, selected or not. Hue encodes identity, never score. */
+.rpg-ring--vitality { --ring: var(--vitality); --ring-bright: var(--vitality-bright); }
+.rpg-ring--power { --ring: var(--power); --ring-bright: var(--power-bright); }
+.rpg-ring--recovery { --ring: var(--recovery); --ring-bright: var(--recovery-bright); }
 
-/* ─── Dashboard: top bar ─── */
-.rpg-topbar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 9px calc(14px + var(--safe-right)) 9px calc(14px + var(--safe-left));
+/* Theme switching. The page background is deliberately left alone —
+   the ambient glow carries the hue shift. */
+.rpg[data-theme="power"] {
+  --theme: var(--power);
+  --theme-bright: var(--power-bright);
+  --theme-deep: var(--power-deep);
+  --theme-soft: rgba(244, 63, 110, 0.16);
+  --theme-glow: rgba(244, 63, 110, 0.65);
 }
 
-.rpg-topbar__name {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-}
-
-.rpg-topbar__level {
-  flex: none;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--rpg-accent-soft);
-  border: 1px solid var(--rpg-border);
-  color: var(--rpg-accent-bright);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-}
-
-.rpg-topbar__xp {
-  flex: 1;
-  min-width: 36px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--rpg-ring-track);
-  overflow: hidden;
-}
-
-.rpg-topbar__xp-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--rpg-accent), var(--rpg-accent-bright));
-  box-shadow: 0 0 10px rgba(109, 92, 240, 0.7);
-  transition: width 420ms ease;
-}
-
-.rpg-topbar__xp-text {
-  flex: none;
-  font-size: 10px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--rpg-text-dim);
-  white-space: nowrap;
+.rpg[data-theme="recovery"] {
+  --theme: var(--recovery);
+  --theme-bright: var(--recovery-bright);
+  --theme-deep: var(--recovery-deep);
+  --theme-soft: rgba(124, 108, 245, 0.16);
+  --theme-glow: rgba(124, 108, 245, 0.65);
 }
 
 /* ─── Dashboard: cards ─── */
 .rpg-card {
   position: relative;
   padding: 12px 14px;
-  border: 1px solid var(--rpg-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, var(--surface-lift) 0%, var(--surface) 100%);
+  box-shadow: 0 10px 26px var(--shade);
 }
 
 /* 1px top edge highlight — lifts the card off the page. */
@@ -1026,31 +1024,28 @@ input, textarea, select { font-size: 16px !important; }
   left: 12px;
   right: 12px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--rpg-edge), transparent);
+  background: linear-gradient(90deg, transparent, var(--edge), transparent);
   pointer-events: none;
 }
 
 .rpg-card__title {
   margin-bottom: 10px;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: 1.1px;
   text-transform: uppercase;
-  color: var(--rpg-accent-bright);
+  color: var(--theme-bright);
+  transition: color 350ms ease-in-out;
 }
 
 /* ─── Dashboard: hero ─── */
 .rpg-hero {
   position: relative;
   padding: 4px 12px 14px;
-  border: 1px solid var(--rpg-border);
+  border: 1px solid var(--border);
   border-radius: 26px;
-  background:
-    linear-gradient(180deg, rgba(42, 52, 98, 0.55) 0%, rgba(20, 24, 41, 0) 58%),
-    linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
-  box-shadow:
-    0 24px 54px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(109, 92, 240, 0.07);
+  background: linear-gradient(180deg, var(--surface-lift) 0%, var(--surface) 100%);
+  box-shadow: 0 24px 54px var(--shade-deep);
   overflow: hidden;
 }
 
@@ -1087,7 +1082,7 @@ input, textarea, select { font-size: 16px !important; }
   height: 100%;
   object-fit: contain;
   opacity: 0;
-  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 14px 22px var(--shade));
   transition: opacity 350ms ease-in-out;
 }
 
@@ -1104,10 +1099,12 @@ input, textarea, select { font-size: 16px !important; }
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--rpg-accent) 0%, transparent 62%);
+  color: var(--theme);
+  background: radial-gradient(circle, currentColor 0%, transparent 62%);
   opacity: 0.24;
   filter: blur(46px);
   animation: rpgAura 6s ease-in-out infinite;
+  transition: color 350ms ease-in-out;
   pointer-events: none;
 }
 
@@ -1124,11 +1121,13 @@ input, textarea, select { font-size: 16px !important; }
   height: 94px;
   transform: translate(-50%, 50%);
   border-radius: 50%;
+  color: var(--theme);
   background:
-    radial-gradient(ellipse 40% 44% at 50% 50%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 74% 80% at 50% 50%, var(--rpg-band), transparent 72%);
+    radial-gradient(ellipse 40% 44% at 50% 50%, var(--core), transparent 100%),
+    radial-gradient(ellipse 74% 80% at 50% 50%, currentColor, transparent 72%);
   opacity: 0.95;
   filter: blur(11px);
+  transition: color 350ms ease-in-out;
   pointer-events: none;
 }
 
@@ -1142,7 +1141,7 @@ input, textarea, select { font-size: 16px !important; }
   height: 11px;
   transform: translate(-50%, 20%);
   border-radius: 50%;
-  background: #000;
+  background: var(--cast);
   opacity: 0.5;
   filter: blur(6px);
   pointer-events: none;
@@ -1160,61 +1159,102 @@ input, textarea, select { font-size: 16px !important; }
   gap: 6px;
   padding: 5px 13px;
   border-radius: 999px;
-  border: 1px solid var(--rpg-edge);
-  background: rgba(8, 10, 20, 0.82);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--edge);
+  background: var(--surface-veil);
+  box-shadow: 0 6px 18px var(--shade);
 }
 
 .rpg-hero__badge-score {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.6px;
   font-variant-numeric: tabular-nums;
-  color: var(--rpg-band);
+  color: var(--text);
 }
 
 .rpg-hero__badge-label {
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 0.6875rem;
+  font-weight: 500;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--rpg-text-dim);
+  color: var(--text-muted);
 }
 
-/* ─── Dashboard: category rings ─── */
-.rpg-hero__rings {
+/* ─── Dashboard: ring tabs ─── */
+/*  Three identical cards in one row with one visibly active. Both states
+ *  share the same box — same padding, same 1px border — so selecting
+ *  cannot shift or resize anything. */
+.rpg-tabs {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 6px;
   width: 100%;
-  margin-top: 8px;
 }
 
 .rpg-ring {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0;
-  width: 83px;
-  min-height: 44px;
-  padding: 0 1px 5px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
+  min-height: 56px;
+  padding: 8px 2px 10px;
+  border: 1px solid var(--track);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
   color: inherit;
   font-family: inherit;
-  cursor: pointer;
+  /* iOS would otherwise flash its own grey overlay over our press state. */
   -webkit-tap-highlight-color: transparent;
-  transition: transform 160ms ease, background-color 160ms ease;
+  /* Press feedback has to land on touchdown, so transform and border run
+     well under 100ms and cannot linger during a scroll. The theme hue
+     shift keeps its own slower curve. */
+  transition: transform 90ms ease-out,
+              border-color 90ms ease-out,
+              background-color 350ms ease-in-out,
+              box-shadow 350ms ease-in-out;
 }
 
-.rpg-ring:active { transform: scale(0.94); }
+/* The only instant confirmation a touch user gets. */
+.rpg-ring:active {
+  transform: scale(0.96);
+  border-color: var(--theme);
+}
 
 .rpg-ring--active {
-  background: var(--rpg-accent-soft);
-  box-shadow: inset 0 0 0 1px var(--rpg-border);
+  background: var(--surface-lift);
+  border-color: var(--theme);
+  box-shadow: 0 0 16px -4px var(--theme-glow);
+}
+
+/* Connector notch: what ties the selected tab to the panel below it. */
+.rpg-ring--active::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 14px;
+  height: 7px;
+  transform: translateX(-50%);
+  background: var(--surface-lift);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Distinct from both the selected and the pressed state, and an outline
+   costs no layout. */
+.rpg-ring:focus-visible {
+  outline: 2px solid var(--theme);
+  outline-offset: 2px;
+}
+
+/* Hover is desktop-only. Left unwrapped it sticks after a tap and makes
+   the wrong card look selected; cursor belongs in here too. */
+@media (hover: hover) and (pointer: fine) {
+  .rpg-ring { cursor: pointer; }
+  .rpg-ring:not(.rpg-ring--active):hover { background: var(--surface-lift); }
 }
 
 .rpg-ring__dial {
@@ -1224,99 +1264,126 @@ input, textarea, select { font-size: 16px !important; }
   justify-content: center;
 }
 
+/* Stroke is set here rather than on the SVG attribute so it can
+   transition and so --ring resolves per ring. */
+.rpg-ring__track { stroke: var(--track); }
+
 .rpg-ring__progress {
-  filter: drop-shadow(0 0 4px var(--rpg-band));
-  transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  stroke: var(--ring);
+  opacity: 1;
+  transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1),
+              stroke 350ms ease-in-out, filter 350ms ease-in-out,
+              opacity 350ms ease-in-out;
+}
+
+/* 85+ : brightest tone, full opacity, soft glow. */
+.rpg-ring--optimal .rpg-ring__progress {
+  stroke: var(--ring-bright);
+  filter: drop-shadow(0 0 5px var(--ring-bright));
+}
+
+/* 70-84 : base tone, full opacity, no glow. */
+.rpg-ring--good .rpg-ring__progress {
+  stroke: var(--ring);
+}
+
+/* Below 70 : same hue, visibly dimmer and desaturated. The arc dims,
+   never the number. */
+.rpg-ring--attention .rpg-ring__progress {
+  stroke: var(--ring);
+  opacity: 0.55;
+  filter: saturate(0.6);
 }
 
 .rpg-ring__score {
   position: absolute;
-  font-size: 23px;
+  font-size: 1.4375rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.8px;
   font-variant-numeric: tabular-nums;
-  color: var(--rpg-text);
+  color: var(--text);
 }
 
 .rpg-ring__label {
   margin-top: -5px;
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 0.6875rem;
+  font-weight: 500;
   letter-spacing: 0.9px;
   text-transform: uppercase;
-  color: var(--rpg-text-dim);
+  color: var(--text-muted);
 }
 
 .rpg-ring__status {
-  font-size: 9px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.6875rem;
+  font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0.2px;
   text-align: center;
-  color: var(--rpg-band);
+  color: var(--text-muted);
+  transition: color 350ms ease-in-out;
 }
 
-/* ─── Dashboard: category detail ─── */
-.rpg-detail { animation: fadeInUp 260ms ease both; }
+/* The only two places --accent is permitted in the whole app: this
+   label's text and the dot beside it. */
+.rpg-ring--attention .rpg-ring__status { color: var(--accent); }
 
-.rpg-detail__text {
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--rpg-text-dim);
-}
-
-/* ─── Dashboard: body panel ─── */
-/*  No bands, no colour grading — chrome accent only. */
-.rpg-body__track {
-  position: relative;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--rpg-ring-track);
-}
-
-.rpg-body__fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--rpg-accent), var(--rpg-accent-bright));
-}
-
-.rpg-body__pin {
-  position: absolute;
-  top: 50%;
-  width: 13px;
-  height: 13px;
+.rpg-ring__alert {
+  flex: none;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid var(--rpg-accent);
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 12px rgba(109, 92, 240, 0.7);
+  background: var(--accent);
 }
 
-.rpg-body__scale {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 9px;
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--rpg-text-dim);
+/* ─── Dashboard: category narrative ─── */
+.rpg-detail__text {
+  margin-bottom: 14px;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-muted);
 }
 
-.rpg-body__now {
-  font-weight: 800;
-  color: var(--rpg-text);
+/* ─── Dashboard: contextual panel ─── */
+/*  One card, swapping contents with the selected ring. The outgoing
+ *  layer is stacked over the incoming one so they genuinely cross-fade,
+ *  and the wrapper height is driven by a measured inline value so the
+ *  transition below can animate between differently-sized panels. */
+.rpg-panel {
+  position: relative;
+  overflow: hidden;
+  transition: height 340ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.rpg-body__markers {
+.rpg-panel__layer { animation: rpgPanelIn 300ms ease both; }
+
+.rpg-panel__layer--out {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  animation: rpgPanelOut 280ms ease both;
+  pointer-events: none;
+}
+
+@keyframes rpgPanelIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rpgPanelOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ─── Dashboard: metric row ─── */
+/*  Shared by BODY markers, sleep vitals and training figures. */
+.rpg-metrics {
   display: flex;
   gap: 4px;
   margin-top: 13px;
   padding-top: 12px;
-  border-top: 1px solid var(--rpg-border);
+  border-top: 1px solid var(--border);
 }
 
-.rpg-body__marker {
+.rpg-metric {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -1326,27 +1393,298 @@ input, textarea, select { font-size: 16px !important; }
   text-align: center;
 }
 
-.rpg-body__marker-value {
-  font-size: 15px;
-  font-weight: 800;
+.rpg-metric__value {
+  font-size: 1.0625rem;
+  font-weight: 600;
   line-height: 1;
   letter-spacing: -0.3px;
   font-variant-numeric: tabular-nums;
 }
 
+
 /* Absent readings show a muted em-dash — never a zero, never red. */
-.rpg-body__marker-value--empty {
+.rpg-metric__value--empty {
   font-weight: 600;
-  color: var(--rpg-text-dim);
+  color: var(--text-muted);
   opacity: 0.7;
 }
 
-.rpg-body__marker-label {
-  font-size: 8px;
+.rpg-metric__label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ─── Dashboard: body section ─── */
+/*  No bands, no colour grading — chrome accent only. */
+.rpg-body__track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.rpg-body__fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--theme);
+  transition: background-color 350ms ease-in-out;
+}
+
+.rpg-body__pin {
+  position: absolute;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 2px solid var(--theme);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px var(--theme-glow);
+  transition: border-color 350ms ease-in-out, box-shadow 350ms ease-in-out;
+}
+
+.rpg-body__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 9px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.rpg-body__now {
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ─── Dashboard: sleep section ─── */
+.rpg-sleep__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.rpg-sleep__total {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.9px;
+  font-variant-numeric: tabular-nums;
+}
+
+/*  Caption and coverage merged into one line. The selected segment
+ *  already names the range, so it is not repeated here. */
+.rpg-sleep__meta {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/*  Main bar. The top margin is room for the target tick's label.
+ *  The fill carries the Recovery band colour. */
+.rpg-sleep__bar {
+  position: relative;
+  height: 14px;
+  margin-top: 1.125rem;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.rpg-sleep__fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--theme);
+  box-shadow: 0 0 12px -2px var(--theme-glow);
+  transition: width 200ms ease,
+              background-color 350ms ease-in-out,
+              box-shadow 350ms ease-in-out;
+}
+
+.rpg-sleep__target {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--tick);
+}
+
+.rpg-sleep__target-label {
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+/* Stage composition, proportional to time in bed. */
+.rpg-sleep__stages {
+  display: flex;
+  height: 8px;
+  margin-top: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--track);
+}
+
+.rpg-sleep__stage { height: 100%; }
+
+/* Awake sits outside the theme family on purpose: it is the absence of
+   sleep, not a stage of it. */
+.rpg-sleep__stage, .rpg-sleep__dot {
+  transition: width 200ms ease, background-color 350ms ease-in-out;
+}
+
+.rpg-sleep__stage--deep, .rpg-sleep__dot--deep { background-color: var(--theme-deep); }
+.rpg-sleep__stage--rem, .rpg-sleep__dot--rem { background-color: var(--theme); }
+.rpg-sleep__stage--light, .rpg-sleep__dot--light { background-color: var(--theme-bright); }
+.rpg-sleep__stage--awake, .rpg-sleep__dot--awake { background-color: var(--neutral); }
+
+.rpg-metrics--legend {
+  margin-top: 9px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.rpg-metric__stage {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: var(--rpg-text-dim);
+  color: var(--text-muted);
+}
+
+.rpg-sleep__dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 2px;
+}
+
+/* ─── Dashboard: range control ─── */
+/*  Generic segmented control. Full width on its own row — at 390px there
+ *  is no room to sit it beside the header and still let it breathe. */
+.rpg-range {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 2px;
+  border: 1px solid var(--track);
+  border-radius: 0.625rem;
+  background: var(--surface);
+}
+
+.rpg-range__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  /* 38 + 4px padding + 2px border = 44pt for the control as a whole. */
+  min-height: 38px;
+  padding: 0 4px;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 90ms ease-out,
+              background-color 180ms ease,
+              color 180ms ease;
+}
+
+/*  Extends each segment's touch target to the full 44pt without
+ *  changing its visual height. Vertical only, so neighbours cannot
+ *  overlap each other. */
+.rpg-range__seg::before {
+  content: "";
+  position: absolute;
+  inset: -3px 0;
+}
+
+.rpg-range__seg:active { transform: scale(0.96); }
+
+.rpg-range__seg--on {
+  background: var(--surface-lift);
+  /* --theme itself only reaches 3.8:1 on --surface-lift; the bright
+     tone of the same hue clears AA without leaving the palette. */
+  color: var(--theme-bright);
+}
+
+.rpg-range__seg:focus-visible {
+  outline: 2px solid var(--theme);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rpg-range__seg { cursor: pointer; }
+  .rpg-range__seg:not(.rpg-range__seg--on):hover { color: var(--text); }
+}
+
+/* ─── Dashboard: range figures ─── */
+/*  Values cross-fade on range change; the bars above are not keyed, so
+ *  they animate their widths instead. */
+.rpg-sleep__fade { animation: rpgValueIn 200ms ease both; }
+
+@keyframes rpgValueIn { from { opacity: 0; } to { opacity: 1; } }
+
+.rpg-sleep__delta {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  transition: color 350ms ease-in-out;
+}
+
+/* Up is the theme hue. --accent is never used here — it belongs to the
+   Pay Attention label alone. */
+.rpg-sleep__delta--up { color: var(--theme); }
+
+/*  Under 60% coverage the figures dim. The caption and the coverage line
+ *  stay at full strength — they are what explain the dimming. */
+.rpg-sleep--thin .rpg-sleep__total,
+.rpg-sleep--thin .rpg-sleep__delta,
+.rpg-sleep--thin .rpg-sleep__bar,
+.rpg-sleep--thin .rpg-sleep__stages,
+.rpg-sleep--thin .rpg-metrics {
+  opacity: 0.45;
+}
+
+/* ─── Dashboard: training section ─── */
+.rpg-train__slots {
+  display: flex;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.rpg-train__slot {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.rpg-train__slot--done {
+  background-color: var(--theme);
+  box-shadow: 0 0 12px -2px var(--theme-glow);
+  transition: background-color 350ms ease-in-out, box-shadow 350ms ease-in-out;
 }
 
 /* ─── Dashboard: workout link ─── */
@@ -1358,13 +1696,13 @@ input, textarea, select { font-size: 16px !important; }
   width: 100%;
   min-height: 46px;
   padding: 12px 14px;
-  border: 1px solid var(--rpg-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
-  color: var(--rpg-text);
+  background: linear-gradient(180deg, var(--surface-lift) 0%, var(--surface) 100%);
+  box-shadow: 0 10px 26px var(--shade);
+  color: var(--text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 0.9375rem;
   font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -1376,7 +1714,7 @@ input, textarea, select { font-size: 16px !important; }
 /* Appears alongside the Power detail panel, so it fades in with it. */
 .rpg-link--reveal { animation: fadeInUp 260ms ease both; }
 
-.rpg-link span { color: var(--rpg-accent-bright); }
+.rpg-link span { color: var(--theme-bright); }
 
 @keyframes rpgAura {
   0%, 100% { opacity: 0.2; }
@@ -1388,7 +1726,7 @@ input, textarea, select { font-size: 16px !important; }
 @media (min-width: 600px) {
   .rpg__scroll { padding-top: 14px; gap: 14px; }
   .rpg-hero { padding: 8px 16px 18px; }
-  .rpg-hero__rings { gap: 14px; }
+  .rpg-tabs { gap: 10px; }
 }
 
 /* ─── Dashboard: reduced motion ─── */
@@ -1397,9 +1735,19 @@ input, textarea, select { font-size: 16px !important; }
   .rpg-hero__avatar { transition: none; }
   .rpg-hero__aura { animation: none; }
   .rpg-ring__progress { transition: none; }
-  .rpg-topbar__xp-fill { transition: none; }
-  .rpg-detail, .rpg-link--reveal { animation: none; }
+  .rpg-link--reveal { animation: none; }
+  .rpg-panel { transition: none; }
+  .rpg-panel__layer { animation: none; }
+  .rpg-panel__layer--out { display: none; }
   .rpg-ring, .rpg-link { transition: none; }
+  /* Hue shifts apply instantly. */
+  .rpg-card__title,
+  .rpg-hero__aura, .rpg-hero__disc, .rpg-ring__status,
+  .rpg-ring__progress, .rpg-body__fill, .rpg-body__pin,
+  .rpg-sleep__fill, .rpg-sleep__stage, .rpg-sleep__dot,
+  .rpg-train__slot { transition: none; }
+  .rpg-sleep__fade { animation: none; }
+  .rpg-range__seg { transition: none; }
 }
 
 /* ─── Route: back to dashboard ─── */
