@@ -899,3 +899,527 @@ input, textarea, select { font-size: 16px !important; }
 @media (min-width: 768px) {
   .content { max-width: 620px; }
 }
+
+/* ─── Dashboard (RPG home) ─── */
+/*  All dashboard rules are scoped under .rpg so the always-dark palette
+ *  never leaks into the existing light/auto-dark workout screens.
+ *
+ *  Colour rule: --rpg-accent (deep violet) owns every piece of chrome,
+ *  including the ambient glow behind the avatar. Green/amber/red appear
+ *  ONLY on the score rings, their status labels, the overall badge and
+ *  the light disc the character stands on. BODY is never graded. */
+
+.rpg {
+  --rpg-bg: #070912;
+  --rpg-surface: #141829;
+  --rpg-surface-2: #1b2039;
+  --rpg-text: #f0f2fa;
+  --rpg-text-dim: #868ead;
+  --rpg-accent: #6d5cf0;
+  --rpg-accent-bright: #9a8dff;
+  --rpg-accent-soft: rgba(109, 92, 240, 0.16);
+  --rpg-green: #35d07f;
+  --rpg-amber: #f5b544;
+  --rpg-red: #f26a6a;
+  --rpg-ring-track: rgba(255, 255, 255, 0.07);
+  --rpg-border: rgba(124, 108, 245, 0.16);
+  --rpg-edge: rgba(255, 255, 255, 0.11);
+  --rpg-band: var(--rpg-green);
+
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--rpg-text);
+  background:
+    radial-gradient(85% 42% at 50% 24%, #1d2547 0%, rgba(10, 13, 28, 0) 72%),
+    radial-gradient(120% 80% at 50% 100%, #0d1022 0%, rgba(7, 9, 18, 0) 60%),
+    var(--rpg-bg);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+.rpg__scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px calc(14px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(14px + var(--safe-left));
+}
+
+/* Band colours — set once, inherited by ring stroke, status text and disc. */
+.rpg-ring--optimal, .rpg-hero--optimal { --rpg-band: var(--rpg-green); }
+.rpg-ring--good, .rpg-hero--good { --rpg-band: var(--rpg-amber); }
+.rpg-ring--attention, .rpg-hero--attention { --rpg-band: var(--rpg-red); }
+
+/* ─── Dashboard: top bar ─── */
+.rpg-topbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 9px calc(14px + var(--safe-right)) 9px calc(14px + var(--safe-left));
+}
+
+.rpg-topbar__name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.rpg-topbar__level {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--rpg-accent-soft);
+  border: 1px solid var(--rpg-border);
+  color: var(--rpg-accent-bright);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.rpg-topbar__xp {
+  flex: 1;
+  min-width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--rpg-ring-track);
+  overflow: hidden;
+}
+
+.rpg-topbar__xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rpg-accent), var(--rpg-accent-bright));
+  box-shadow: 0 0 10px rgba(109, 92, 240, 0.7);
+  transition: width 420ms ease;
+}
+
+.rpg-topbar__xp-text {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rpg-text-dim);
+  white-space: nowrap;
+}
+
+/* ─── Dashboard: cards ─── */
+.rpg-card {
+  position: relative;
+  padding: 12px 14px;
+  border: 1px solid var(--rpg-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+/* 1px top edge highlight — lifts the card off the page. */
+.rpg-card::before,
+.rpg-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rpg-edge), transparent);
+  pointer-events: none;
+}
+
+.rpg-card__title {
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--rpg-accent-bright);
+}
+
+/* ─── Dashboard: hero ─── */
+.rpg-hero {
+  position: relative;
+  padding: 4px 12px 14px;
+  border: 1px solid var(--rpg-border);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(42, 52, 98, 0.55) 0%, rgba(20, 24, 41, 0) 58%),
+    linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(109, 92, 240, 0.07);
+  overflow: hidden;
+}
+
+.rpg-hero__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*  The bottom padding is the room the disc and badge sit in — both are
+ *  positioned against the stack's bottom edge, which is the floor line. */
+.rpg-hero__figure {
+  position: relative;
+  padding-bottom: 44px;
+}
+
+/*  Fixed aspect ratio, matching the PNGs (393x760), so swapping variants
+ *  can never reflow the page. */
+.rpg-hero__stack {
+  position: relative;
+  z-index: 3;
+  height: clamp(230px, 44vh, 400px);
+  aspect-ratio: 393 / 760;
+}
+
+/*  Every variant is stacked and always present — that is the preload.
+ *  Only opacity animates: the character is identically posed in all three,
+ *  so any movement would break the morph. */
+.rpg-hero__avatar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.5));
+  transition: opacity 350ms ease-in-out;
+}
+
+.rpg-hero__avatar--on { opacity: 1; }
+
+/* Violet ambient glow — brand accent, sits furthest back. */
+.rpg-hero__aura {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 46%;
+  width: 150%;
+  max-width: 430px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--rpg-accent) 0%, transparent 62%);
+  opacity: 0.24;
+  filter: blur(46px);
+  animation: rpgAura 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/*  The lit disc: a filled, blurred glow tinted by the overall band, with a
+ *  near-white core falling off to transparent. Centred on the floor line
+ *  by translateY(50%), so it reads as light on a surface. */
+.rpg-hero__disc {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 44px;
+  width: 82%;
+  max-width: 300px;
+  height: 94px;
+  transform: translate(-50%, 50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 40% 44% at 50% 50%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 74% 80% at 50% 50%, var(--rpg-band), transparent 72%);
+  opacity: 0.95;
+  filter: blur(11px);
+  pointer-events: none;
+}
+
+/* Contact shadow, tight under the soles. */
+.rpg-hero__shadow {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 44px;
+  width: 30%;
+  height: 11px;
+  transform: translate(-50%, 20%);
+  border-radius: 50%;
+  background: #000;
+  opacity: 0.5;
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Overall score, resting on the disc. */
+.rpg-hero__badge {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--rpg-edge);
+  background: rgba(8, 10, 20, 0.82);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.rpg-hero__badge-score {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rpg-band);
+}
+
+.rpg-hero__badge-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--rpg-text-dim);
+}
+
+/* ─── Dashboard: category rings ─── */
+.rpg-hero__rings {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.rpg-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 83px;
+  min-height: 44px;
+  padding: 0 1px 5px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.rpg-ring:active { transform: scale(0.94); }
+
+.rpg-ring--active {
+  background: var(--rpg-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--rpg-border);
+}
+
+.rpg-ring__dial {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rpg-ring__progress {
+  filter: drop-shadow(0 0 4px var(--rpg-band));
+  transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rpg-ring__score {
+  position: absolute;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rpg-text);
+}
+
+.rpg-ring__label {
+  margin-top: -5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--rpg-text-dim);
+}
+
+.rpg-ring__status {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  text-align: center;
+  color: var(--rpg-band);
+}
+
+/* ─── Dashboard: category detail ─── */
+.rpg-detail { animation: fadeInUp 260ms ease both; }
+
+.rpg-detail__text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--rpg-text-dim);
+}
+
+/* ─── Dashboard: body panel ─── */
+/*  No bands, no colour grading — chrome accent only. */
+.rpg-body__track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rpg-ring-track);
+}
+
+.rpg-body__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rpg-accent), var(--rpg-accent-bright));
+}
+
+.rpg-body__pin {
+  position: absolute;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--rpg-accent);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px rgba(109, 92, 240, 0.7);
+}
+
+.rpg-body__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rpg-text-dim);
+}
+
+.rpg-body__now {
+  font-weight: 800;
+  color: var(--rpg-text);
+}
+
+.rpg-body__markers {
+  display: flex;
+  gap: 4px;
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rpg-border);
+}
+
+.rpg-body__marker {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.rpg-body__marker-value {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Absent readings show a muted em-dash — never a zero, never red. */
+.rpg-body__marker-value--empty {
+  font-weight: 600;
+  color: var(--rpg-text-dim);
+  opacity: 0.7;
+}
+
+.rpg-body__marker-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--rpg-text-dim);
+}
+
+/* ─── Dashboard: workout link ─── */
+.rpg-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--rpg-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--rpg-surface-2) 0%, var(--rpg-surface) 100%);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  color: var(--rpg-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 140ms ease;
+}
+
+.rpg-link:active { transform: scale(0.99); }
+
+/* Appears alongside the Power detail panel, so it fades in with it. */
+.rpg-link--reveal { animation: fadeInUp 260ms ease both; }
+
+.rpg-link span { color: var(--rpg-accent-bright); }
+
+@keyframes rpgAura {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.3; }
+}
+
+/* ─── Dashboard: larger screens ─── */
+/*  Capped at 480px — this is a phone app and must not sprawl. */
+@media (min-width: 600px) {
+  .rpg__scroll { padding-top: 14px; gap: 14px; }
+  .rpg-hero { padding: 8px 16px 18px; }
+  .rpg-hero__rings { gap: 14px; }
+}
+
+/* ─── Dashboard: reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  /* Variants swap instantly — no cross-fade. */
+  .rpg-hero__avatar { transition: none; }
+  .rpg-hero__aura { animation: none; }
+  .rpg-ring__progress { transition: none; }
+  .rpg-topbar__xp-fill { transition: none; }
+  .rpg-detail, .rpg-link--reveal { animation: none; }
+  .rpg-ring, .rpg-link { transition: none; }
+}
+
+/* ─── Route: back to dashboard ─── */
+.route-back {
+  display: flex;
+  padding: 8px calc(16px + var(--safe-right)) 0 calc(16px + var(--safe-left));
+  background: var(--bg);
+}
+
+.route-back__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--blue);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}

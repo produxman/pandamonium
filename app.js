@@ -637,4 +637,41 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+/* ─── Router ─── */
+/*  Hash-based on purpose: this is a static site with no server, so "#/workout"
+ *  survives a refresh where a real path would 404. The original App below is
+ *  untouched — it simply renders under the #/workout route now. */
+function currentRoute() {
+  return window.location.hash.replace(/^#/, "") || "/";
+}
+
+function Root() {
+  const [route, setRoute] = useState(currentRoute);
+
+  useEffect(() => {
+    const onChange = () => {
+      setRoute(currentRoute());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+
+  if (route === "/workout") {
+    return React.createElement(React.Fragment, null,
+      React.createElement("div", { className: "route-back" },
+        React.createElement("button", {
+          className: "route-back__btn",
+          onClick: () => { window.location.hash = "/"; }
+        }, "\u2039 Dashboard")
+      ),
+      React.createElement(App)
+    );
+  }
+
+  return React.createElement(Dashboard, {
+    onOpenWorkout: () => { window.location.hash = "/workout"; }
+  });
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Root));
